@@ -191,7 +191,7 @@ class GraphCRF(CRF):
             pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
         else:
             y = y.reshape(n_nodes)
-            gx = np.ogrid[:n_nodes]
+            #gx = np.ogrid[:n_nodes]
 
             #make one hot encoding
             unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)

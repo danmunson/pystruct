@@ -8,3 +8,4 @@ doc/generated
 doc/auto_examples
 build/
 *.egg-info
+*dist/
