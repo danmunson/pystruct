@@ -101,6 +101,6 @@ def get_label_scores(predictor, X, Y, distf=None):
     
     total_scores = unary_scores + pairwise_scores
  
-    return apply_softmax(total_scores)
+    return apply_softmax(total_scores), unary_scores
 
 
