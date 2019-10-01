@@ -88,7 +88,7 @@ def get_label_scores(predictor, X, Y, distf=None):
     # main
     unary_scores = unary_contributions(X)
     pairwise_scores = np.zeros((n_states, X.shape[0]), dtype=np.float)
-    for y_i in range(Y):
+    for y_i in range(Y.shape[0]):
         for swap_label in range(n_states):
             pw_score = 0
             if y_i == 0:
