@@ -77,7 +77,7 @@ def get_label_scores(predictor, X, Y, distf=None):
     '''
     Softmax-variant function (for use on each column of total_scores)
     '''
-    def apply_softmax(label_score_matrix):
+    def apply_softmax(score_matrix):
         softmax_matrix = np.zeros((score_matrix.shape[0], score_matrix.shape[1]), dtype=np.float)
         for col in range(score_matrix.shape[1]):
             dist = sum(np.array(list(map(dist_func, score_matrix[:,col]))))
@@ -92,9 +92,9 @@ def get_label_scores(predictor, X, Y, distf=None):
         for swap_label in range(n_states):
             pw_score = 0
             if y_i == 0:
-                pw_score = pairwise_contributions( ((swap_label, Y[y_i+1])) )
+                pw_score = pairwise_contributions( ((swap_label, Y[y_i+1]) ,) )
             elif y_i == len(Y) - 1:
-                pw_score = pairwise_contributions( ((Y[y_i-1], swap_label)) )
+                pw_score = pairwise_contributions( ((Y[y_i-1], swap_label) ,) )
             else:
                 pw_score = pairwise_contributions( ((Y[y_i-1], swap_label) , (swap_label, Y[y_i+1])) )
         pairwise_scores[swap_label, y_i] = pw_score
