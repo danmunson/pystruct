@@ -21,7 +21,7 @@ def get_label_scores(predictor, X, Y, distf=None):
     n_states = model.n_states
     n_features = X.shape[1]
 
-    state_combos = ((n_states ** 2) + n_states) / 2
+    state_combos = int(((n_states ** 2) + n_states) / 2)
     unary_weight_subset = weight_vector[0 : (n_states * n_features)]
     unary_weight_matrix = np.reshape(unary_weight_subset, (n_states, n_features))
     
