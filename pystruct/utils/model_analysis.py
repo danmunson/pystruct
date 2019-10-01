@@ -13,7 +13,7 @@ def get_label_scores(predictor, X, Y, distf=None):
         dist_func = distf
 
     model = predictor.model
-    if not type(model) != ChainCRF:
+    if not type(model) == ChainCRF:
         raise TypeError("Model must be a ChainCRF.")
 
     weight_vector = predictor.w
