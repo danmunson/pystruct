@@ -1,12 +1,16 @@
 import numpy as np
 from ..models import *
 
-def get_label_scores(predictor, X, Y):
+def get_label_scores(predictor, X, Y, distf=None):
 
     '''
-    Returns a matrix that represents the Softmax output of the contribution 
+    Returns a matrix that represents the Softmax-variant output of the contribution 
     of each possible label for each node in the graph.
     '''
+
+    dist_func = np.exp
+    if callable(distf):
+        dist_func = distf
 
     model = predictor.model
     if not type(model) != ChainCRF:
@@ -71,14 +75,14 @@ def get_label_scores(predictor, X, Y):
         return np.dot(pw_weight_subset.T, pw_vector)
     
     '''
-    Softmax function (for use on each column of total_scores)
+    Softmax-variant function (for use on each column of total_scores)
     '''
     def apply_softmax(label_score_matrix):
         softmax_matrix = np.zeros((score_matrix.shape[0], score_matrix.shape[1]), dtype=np.float)
         for col in range(score_matrix.shape[1]):
-            mdist = sum(np.array(list(map(np.exp, score_matrix[:,col]))))
-            mnorm = lambda x : x / mdist
-            softmax_matrix[:,col] = np.array(list(map(mnorm, score_matrix[:,col])))
+            dist = sum(np.array(list(map(dist_func, score_matrix[:,col]))))
+            norm = lambda x : dist_func(x) / dist
+            softmax_matrix[:,col] = np.array(list(map(norm, score_matrix[:,col])))
         return softmax_matrix
 
     # main
