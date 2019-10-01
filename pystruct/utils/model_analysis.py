@@ -1,11 +1,11 @@
 import numpy as np
 from ..models import *
 
-def get_label_scores(predictor, X, Y_pred):
+def get_label_scores(predictor, X, Y):
 
     '''
-    Returns a matrix that represents the Softmax output of the weights of each possible label
-    for each node in the graph.
+    Returns a matrix that represents the Softmax output of the contribution 
+    of each possible label for each node in the graph.
     '''
 
     model = predictor.model
@@ -13,13 +13,16 @@ def get_label_scores(predictor, X, Y_pred):
         raise TypeError("Model must be a ChainCRF.")
 
     weight_vector = predictor.w
-    n_states = model.n_states
-    state_combos = ((n_states ** 2) + n_states) / 2
     directed = model.directed
-    matrix_list = []
+    n_states = model.n_states
+    n_features = X.shape[1]
 
+    state_combos = ((n_states ** 2) + n_states) / 2
+    unary_weight_subset = weight_vector[0 : (n_states * n_features)]
+    unary_weight_matrix = np.reshape(unary_weight_subset, (n_states, n_features))
+    
     '''
-    Return value of unary-only contribution:
+    Return value of unary-only contribution for each Label-Node combination:
     
         np.dot( feature vector corresponding to Node X , weight sub-vector corresponding to Label Y)
 
@@ -32,7 +35,9 @@ def get_label_scores(predictor, X, Y_pred):
     by taking the dot product of the feature vector for node X and the subset of the weight vector that 
     corresponds to the given label.
     '''
-    def unary_contributions()
+    def unary_contributions(feature_matrix):
+        # returns contribution matrix: (row i, column j) --> contribution of Label[i] x Node[j]
+        return np.dot(unary_weight_matrix, feature_matrix.T)
 
     '''
     Return the flat-array index corresponding to the coordinates of
@@ -51,27 +56,47 @@ def get_label_scores(predictor, X, Y_pred):
         diff = n_states - mn
         diff_z = ((diff ** 2) + diff) / 2
         return int((state_combos - diff_z) + (mx - mn))
+    
+    '''
+    Return value of pairwise contribution of each Label-Node combination,
+    given argmax prediction vector.
+    '''
+    pw_index_function = directed_pw_indices if directed else undirected_pw_indices
+    pw_weight_subset = weight_vector[(n_states ** 2):] if directed else weight_vector[(-1 * state_combos):]
+
+    def pairwise_contributions(label_pairs):
+        pw_vector = np.zeros((pw_weight_subset.shape[0]), dtype=np.float)
+        for x, y in label_pairs:
+            pw_vector[pw_index_function(x,y)] += 1.0
+        return np.dot(pw_weight_subset.T, pw_vector)
+    
+    '''
+    Softmax function (for use on each column of total_scores)
+    '''
+    def apply_softmax(label_score_matrix):
+        softmax_matrix = np.zeros((score_matrix.shape[0], score_matrix.shape[1]), dtype=np.float)
+        for col in range(score_matrix.shape[1]):
+            mdist = sum(np.array(list(map(np.exp, score_matrix[:,col]))))
+            mnorm = lambda x : x / mdist
+            softmax_matrix[:,col] = np.array(list(map(mnorm, score_matrix[:,col])))
+        return softmax_matrix
+
+    # main
+    unary_scores = unary_contributions(X)
+    pairwise_scores = np.zeros((n_states, X.shape[0]), dtype=np.float)
+    for y_i in range(Y):
+        for swap_label in range(n_states):
+            pw_score = 0
+            if y_i == 0:
+                pw_score = pairwise_contributions( (swap_label, Y[y_i+1]) )
+            elif y_i == len(Y) - 1:
+                pw_score = pairwise_contributions( (Y[y_i-1], swap_label) )
+            else:
+                pw_score = pairwise_contributions( ((Y[y_i-1], swap_label) , (swap_label, Y[y_i+1])) )
+        pairwise_scores[swap_label, y_i] = pw_score
+    
+    total_scores = unary_scores + pairwise_scores
+ 
+    return apply_softmax(total_scores)
 
 
-    pw_index_function = undirected_pw_indices
-    if directed:
-        pw_index_function = directed_pw_indices
-
-    for s, x in enumerate(X):
-        prediction = Y_pred[s]
-        label_scores = np.zeros((x.shape[0], n_states), dtype=np.float)
-
-
-
-        for i, node in enumerate(x):
-            for state in range(n_states):
-                # identify relevant indices of would-be flattened pairwise matrix
-                pw_indices = []
-                if i > 0:
-                    # pw_from_index
-                    prev_label = prediction[i-1]
-                    pw_indices.append((n_states * (prev_label - 1)) + state)
-                if i < len(x):
-                    # pw_to_index
-                    next_label = prediction[i+1]
-                    pw_indices.append((n_states * (next_label - 1)) + state)
