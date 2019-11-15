@@ -97,7 +97,9 @@ def get_label_scores(predictor, X, Y, distf=None):
                 pw_score = pairwise_contributions( ((Y[y_i-1], swap_label) ,) )
             else:
                 pw_score = pairwise_contributions( ((Y[y_i-1], swap_label) , (swap_label, Y[y_i+1])) )
-        pairwise_scores[swap_label, y_i] = pw_score
+        
+        # divide by 2 to adjust for the pairwise nature of these values
+        pairwise_scores[swap_label, y_i] = pw_score / 2
     
     total_scores = unary_scores + pairwise_scores
  
